@@ -1,0 +1,2545 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+--navy: #0f1b2d;
+--navy-mid: #162236;
+--navy-light: #1e3050;
+--gold: #c9922a;
+--gold-light: #e8b84b;
+--gold-pale: #f5e9cb;
+--cream: #fdf6ec;
+--text: #e8ddd0;
+--text-muted: #8a9ab0;
+--border: rgba(201, 146, 42, 0.2);
+--cat1: #c9922a;
+--cat2: #4a8fa8;
+--cat3: #7a6a8f;
+--cat4: #5aab6d;
+--cat5: #a86a4a;
+--cat6: #4a6aa8;
+--cat7: #8f6a7a;
+--cat8: #6a8f7a;
+--status-todo: #8a9ab0;
+--status-progress: #e8b84b;
+--status-done: #5aab6d;
+}
+
+body {
+background: var(--navy);
+color: var(--text);
+font-family: 'DM Sans', sans-serif;
+min-height: 100vh;
+background-image:
+radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201,146,42,0.12) 0%, transparent 60%),
+radial-gradient(ellipse 40% 40% at 90% 90%, rgba(74,143,168,0.07) 0%, transparent 50%);
+}
+
+header {
+padding: 40px 48px 28px;
+border-bottom: 1px solid var(--border);
+display: flex;
+align-items: flex-end;
+justify-content: space-between;
+gap: 24px;
+}
+
+.brand h1 {
+font-family: 'Cormorant Garamond', serif;
+font-size: 2.6rem;
+font-weight: 600;
+color: var(--gold-light);
+letter-spacing: 0.01em;
+line-height: 1;
+}
+
+.brand p {
+font-size: 0.8rem;
+color: var(--text-muted);
+letter-spacing: 0.12em;
+text-transform: uppercase;
+margin-top: 6px;
+}
+
+.add-btn {
+background: var(--gold);
+color: var(--navy);
+border: none;
+padding: 12px 24px;
+font-family: 'DM Sans', sans-serif;
+font-weight: 500;
+font-size: 0.85rem;
+letter-spacing: 0.06em;
+cursor: pointer;
+transition: background 0.2s, transform 0.15s;
+white-space: nowrap;
+}
+.add-btn:hover { background: var(--gold-light); transform: translateY(-1px); }
+
+/* Tabs */
+.tabs {
+display: flex;
+gap: 0;
+padding: 0 48px;
+border-bottom: 1px solid var(--border);
+margin-top: 0;
+}
+
+.tab {
+padding: 18px 28px;
+font-size: 0.82rem;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+cursor: pointer;
+border: none;
+background: transparent;
+color: var(--text-muted);
+border-bottom: 2px solid transparent;
+transition: color 0.2s, border-color 0.2s;
+font-family: 'DM Sans', sans-serif;
+position: relative;
+bottom: -1px;
+}
+
+.tab.active { color: var(--gold-light); border-bottom-color: var(--gold); }
+.tab:hover:not(.active) { color: var(--text); }
+
+.tab .count {
+display: inline-block;
+background: rgba(201,146,42,0.15);
+color: var(--gold);
+font-size: 0.7rem;
+padding: 2px 7px;
+border-radius: 10px;
+margin-left: 8px;
+}
+.tab.active .count { background: rgba(201,146,42,0.25); }
+
+/* Main */
+main { padding: 36px 48px; }
+
+/* Stats bar */
+.stats {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 16px;
+margin-bottom: 36px;
+}
+
+.stat-card {
+background: var(--navy-mid);
+border: 1px solid var(--border);
+padding: 20px 24px;
+display: flex;
+align-items: center;
+gap: 16px;
+}
+
+.stat-dot {
+width: 10px;
+height: 10px;
+border-radius: 50%;
+flex-shrink: 0;
+}
+
+.stat-info { flex: 1; }
+.stat-label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+.stat-count { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 600; color: var(--gold-light); line-height: 1.1; }
+
+/* Project grid */
+.projects-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+gap: 16px;
+}
+
+.project-card {
+background: var(--navy-mid);
+border: 1px solid var(--border);
+padding: 24px;
+cursor: pointer;
+transition: border-color 0.2s, transform 0.15s, background 0.2s;
+position: relative;
+overflow: hidden;
+animation: fadeUp 0.3s ease both;
+}
+
+@keyframes fadeUp {
+from { opacity: 0; transform: translateY(12px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+.project-card::before {
+content: '';
+position: absolute;
+left: 0; top: 0; bottom: 0;
+width: 3px;
+}
+
+.project-card::before { background: var(--card-cat-color, var(--cat1)); }
+
+.project-card:hover {
+border-color: rgba(201,146,42,0.45);
+background: var(--navy-light);
+transform: translateY(-2px);
+}
+
+.card-header {
+display: flex;
+align-items: flex-start;
+justify-content: space-between;
+gap: 12px;
+margin-bottom: 12px;
+}
+
+.card-title {
+font-family: 'Cormorant Garamond', serif;
+font-size: 1.25rem;
+font-weight: 600;
+color: var(--cream);
+line-height: 1.2;
+}
+
+.card-actions {
+display: flex;
+gap: 8px;
+opacity: 0;
+transition: opacity 0.2s;
+flex-shrink: 0;
+}
+.project-card:hover .card-actions { opacity: 1; }
+
+.icon-btn {
+background: rgba(255,255,255,0.06);
+border: none;
+color: var(--text-muted);
+width: 28px;
+height: 28px;
+display: grid;
+place-items: center;
+cursor: pointer;
+transition: background 0.15s, color 0.15s;
+border-radius: 2px;
+font-size: 13px;
+}
+.icon-btn:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+.icon-btn.delete:hover { background: rgba(200,60,60,0.2); color: #e07070; }
+
+.card-desc {
+font-size: 0.85rem;
+color: var(--text-muted);
+line-height: 1.55;
+margin-bottom: 16px;
+min-height: 20px;
+}
+
+.card-footer {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 8px;
+}
+
+.cat-tag {
+font-size: 0.67rem;
+letter-spacing: 0.1em;
+text-transform: uppercase;
+padding: 4px 10px;
+border-radius: 2px;
+font-weight: 500;
+}
+
+.cat-tag.cat1 { background: rgba(201,146,42,0.15); color: var(--cat1); }
+.cat-tag.cat2 { background: rgba(74,143,168,0.15); color: var(--cat2); }
+.cat-tag.cat3 { background: rgba(122,106,143,0.15); color: var(--cat3); }
+.cat-tag.cat4 { background: rgba(90,171,109,0.15); color: var(--cat4); }
+.cat-tag.cat5 { background: rgba(168,106,74,0.15); color: var(--cat5); }
+.cat-tag.cat6 { background: rgba(74,106,168,0.15); color: var(--cat6); }
+.cat-tag.cat7 { background: rgba(143,106,122,0.15); color: var(--cat7); }
+.cat-tag.cat8 { background: rgba(106,143,122,0.15); color: var(--cat8); }
+
+.status-badge {
+font-size: 0.68rem;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+display: flex;
+align-items: center;
+gap: 5px;
+}
+.status-badge::before {
+content: '';
+width: 6px; height: 6px;
+border-radius: 50%;
+}
+.status-badge.todo { color: var(--status-todo); }
+.status-badge.todo::before { background: var(--status-todo); }
+.status-badge.progress { color: var(--status-progress); }
+.status-badge.progress::before { background: var(--status-progress); }
+.status-badge.done { color: var(--status-done); }
+.status-badge.done::before { background: var(--status-done); }
+
+/* Priority badge */
+.priority-badge {
+font-size: 0.67rem;
+letter-spacing: 0.09em;
+text-transform: uppercase;
+font-weight: 600;
+padding: 3px 9px;
+border-radius: 2px;
+}
+.priority-badge.critical { background: rgba(220,60,60,0.15); color: #e07070; border: 1px solid rgba(220,60,60,0.25); }
+.priority-badge.high     { background: rgba(220,120,40,0.15); color: #e09050; border: 1px solid rgba(220,120,40,0.25); }
+.priority-badge.medium   { background: rgba(201,146,42,0.15); color: var(--gold); border: 1px solid rgba(201,146,42,0.25); }
+.priority-badge.low      { background: rgba(90,171,109,0.12); color: #7dc491; border: 1px solid rgba(90,171,109,0.2); }
+
+/* Due date */
+.due-date {
+font-size: 0.72rem;
+color: var(--text-muted);
+display: flex;
+align-items: center;
+gap: 5px;
+margin-top: 10px;
+margin-bottom: 0;
+}
+.due-date svg { opacity: 0.6; flex-shrink: 0; }
+.due-date.overdue { color: #e07070; }
+.due-date.overdue svg { opacity: 1; }
+.due-date.soon { color: var(--gold); }
+
+.card-meta {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 14px;
+gap: 8px;
+flex-wrap: wrap;
+}
+
+/* Form row - two columns */
+.form-row {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 16px;
+}
+
+/* Priority selector styled */
+.priority-options {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 8px;
+}
+.priority-opt {
+text-align: center;
+padding: 8px 4px;
+border: 1px solid var(--border);
+cursor: pointer;
+font-size: 0.7rem;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+color: var(--text-muted);
+transition: all 0.15s;
+user-select: none;
+}
+.priority-opt:hover { border-color: var(--text-muted); color: var(--text); }
+.priority-opt.selected-critical { border-color: #e07070; background: rgba(220,60,60,0.12); color: #e07070; }
+.priority-opt.selected-high     { border-color: #e09050; background: rgba(220,120,40,0.12); color: #e09050; }
+.priority-opt.selected-medium   { border-color: var(--gold); background: rgba(201,146,42,0.12); color: var(--gold); }
+.priority-opt.selected-low      { border-color: #7dc491; background: rgba(90,171,109,0.1); color: #7dc491; }
+
+/* Empty state */
+.empty {
+grid-column: 1 / -1;
+text-align: center;
+padding: 80px 24px;
+color: var(--text-muted);
+}
+.empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.3; }
+.empty h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; color: var(--text); margin-bottom: 8px; }
+.empty p { font-size: 0.85rem; }
+
+/* Modal */
+.overlay {
+position: fixed; inset: 0;
+background: rgba(5, 12, 22, 0.85);
+backdrop-filter: blur(4px);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 100;
+padding: 24px;
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.2s;
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+background: var(--navy-mid);
+border: 1px solid var(--border);
+width: 100%;
+max-width: 480px;
+padding: 36px;
+transform: translateY(16px);
+transition: transform 0.25s;
+}
+.overlay.open .modal { transform: translateY(0); }
+
+.modal h2 {
+font-family: 'Cormorant Garamond', serif;
+font-size: 1.7rem;
+color: var(--gold-light);
+margin-bottom: 28px;
+}
+
+.form-group { margin-bottom: 20px; }
+.form-group label {
+display: block;
+font-size: 0.72rem;
+letter-spacing: 0.12em;
+text-transform: uppercase;
+color: var(--text-muted);
+margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+width: 100%;
+background: var(--navy);
+border: 1px solid var(--border);
+color: var(--text);
+padding: 11px 14px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.9rem;
+outline: none;
+transition: border-color 0.2s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus { border-color: var(--gold); }
+
+.form-group textarea { resize: vertical; min-height: 80px; }
+.form-group select option { background: var(--navy-mid); }
+
+.modal-actions {
+display: flex;
+gap: 12px;
+margin-top: 28px;
+justify-content: flex-end;
+}
+
+.btn-cancel {
+background: transparent;
+border: 1px solid var(--border);
+color: var(--text-muted);
+padding: 10px 22px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.85rem;
+cursor: pointer;
+transition: border-color 0.2s, color 0.2s;
+}
+.btn-cancel:hover { border-color: var(--text-muted); color: var(--text); }
+
+.btn-save {
+background: var(--gold);
+color: var(--navy);
+border: none;
+padding: 10px 28px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.85rem;
+font-weight: 500;
+cursor: pointer;
+transition: background 0.2s;
+}
+.btn-save:hover { background: var(--gold-light); }
+
+/* Confirm dialog */
+.confirm-overlay {
+position: fixed; inset: 0;
+background: rgba(5,12,22,0.88);
+backdrop-filter: blur(4px);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 300;
+padding: 24px;
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.2s;
+}
+.confirm-overlay.open { opacity: 1; pointer-events: all; }
+
+.confirm-box {
+background: var(--navy-mid);
+border: 1px solid rgba(220,80,80,0.3);
+width: 100%;
+max-width: 380px;
+padding: 32px;
+transform: translateY(12px) scale(0.98);
+transition: transform 0.2s;
+text-align: center;
+}
+.confirm-overlay.open .confirm-box { transform: translateY(0) scale(1); }
+
+.confirm-icon {
+font-size: 2rem;
+margin-bottom: 14px;
+opacity: 0.8;
+}
+
+.confirm-box h3 {
+font-family: 'Cormorant Garamond', serif;
+font-size: 1.4rem;
+color: var(--cream);
+margin-bottom: 8px;
+}
+
+.confirm-box p {
+font-size: 0.85rem;
+color: var(--text-muted);
+line-height: 1.5;
+margin-bottom: 24px;
+}
+
+.confirm-box p strong {
+color: var(--text);
+font-weight: 500;
+}
+
+.confirm-actions {
+display: flex;
+gap: 10px;
+justify-content: center;
+}
+
+.btn-confirm-cancel {
+background: transparent;
+border: 1px solid var(--border);
+color: var(--text-muted);
+padding: 10px 24px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.85rem;
+cursor: pointer;
+transition: border-color 0.2s, color 0.2s;
+}
+.btn-confirm-cancel:hover { border-color: var(--text-muted); color: var(--text); }
+
+.btn-confirm-delete {
+background: rgba(200,60,60,0.15);
+border: 1px solid rgba(200,60,60,0.4);
+color: #e07070;
+padding: 10px 24px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.85rem;
+font-weight: 500;
+cursor: pointer;
+transition: background 0.2s, border-color 0.2s;
+}
+.btn-confirm-delete:hover { background: rgba(200,60,60,0.28); border-color: rgba(200,60,60,0.65); }
+
+/* Subtask progress bar on card */
+.subtask-progress {
+margin-top: 12px;
+margin-bottom: 4px;
+}
+.subtask-progress-label {
+font-size: 0.68rem;
+color: var(--text-muted);
+letter-spacing: 0.06em;
+margin-bottom: 6px;
+display: flex;
+justify-content: space-between;
+}
+.progress-track {
+height: 3px;
+background: rgba(255,255,255,0.08);
+border-radius: 2px;
+overflow: hidden;
+}
+.progress-fill {
+height: 100%;
+background: var(--gold);
+border-radius: 2px;
+transition: width 0.4s ease;
+}
+.progress-fill.complete { background: var(--status-done); }
+
+/* Detail panel */
+.detail-overlay {
+position: fixed; inset: 0;
+background: rgba(5,12,22,0.7);
+backdrop-filter: blur(3px);
+z-index: 200;
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.25s;
+}
+.detail-overlay.open { opacity: 1; pointer-events: all; }
+
+.detail-panel {
+position: fixed;
+top: 0; right: 0; bottom: 0;
+width: 440px;
+max-width: 100vw;
+background: var(--navy-mid);
+border-left: 1px solid var(--border);
+display: flex;
+flex-direction: column;
+transform: translateX(100%);
+transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+z-index: 201;
+overflow: hidden;
+}
+.detail-overlay.open .detail-panel { transform: translateX(0); }
+
+.detail-header {
+padding: 28px 28px 20px;
+border-bottom: 1px solid var(--border);
+flex-shrink: 0;
+}
+
+.detail-close {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 16px;
+}
+.detail-close span {
+font-size: 0.7rem;
+letter-spacing: 0.12em;
+text-transform: uppercase;
+color: var(--text-muted);
+}
+.close-btn {
+background: rgba(255,255,255,0.06);
+border: none;
+color: var(--text-muted);
+width: 30px; height: 30px;
+display: grid; place-items: center;
+cursor: pointer;
+border-radius: 2px;
+font-size: 15px;
+transition: background 0.15s, color 0.15s;
+}
+.close-btn:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+
+.detail-title {
+font-family: 'Cormorant Garamond', serif;
+font-size: 1.6rem;
+font-weight: 600;
+color: var(--cream);
+line-height: 1.2;
+margin-bottom: 10px;
+}
+
+.detail-badges {
+display: flex;
+gap: 8px;
+flex-wrap: wrap;
+align-items: center;
+margin-bottom: 8px;
+}
+
+.detail-desc {
+font-size: 0.85rem;
+color: var(--text-muted);
+line-height: 1.6;
+margin-top: 10px;
+}
+
+.detail-body {
+flex: 1;
+overflow-y: auto;
+padding: 24px 28px;
+}
+
+.subtasks-heading {
+font-size: 0.72rem;
+letter-spacing: 0.12em;
+text-transform: uppercase;
+color: var(--text-muted);
+margin-bottom: 14px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+}
+
+.subtask-list {
+display: flex;
+flex-direction: column;
+gap: 6px;
+margin-bottom: 16px;
+}
+
+.subtask-item {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 10px 12px;
+background: rgba(255,255,255,0.03);
+border: 1px solid transparent;
+border-radius: 2px;
+transition: background 0.15s, border-color 0.15s;
+}
+.subtask-item:hover { background: rgba(255,255,255,0.06); border-color: var(--border); }
+
+.subtask-check {
+width: 16px; height: 16px;
+border: 1.5px solid rgba(201,146,42,0.4);
+border-radius: 3px;
+flex-shrink: 0;
+cursor: pointer;
+display: grid; place-items: center;
+transition: background 0.15s, border-color 0.15s;
+background: transparent;
+}
+.subtask-check.checked {
+background: var(--gold);
+border-color: var(--gold);
+}
+.subtask-check.checked::after {
+content: '';
+width: 8px; height: 5px;
+border-left: 1.5px solid var(--navy);
+border-bottom: 1.5px solid var(--navy);
+transform: rotate(-45deg) translateY(-1px);
+display: block;
+}
+
+.subtask-text {
+flex: 1;
+font-size: 0.88rem;
+color: var(--text);
+line-height: 1.4;
+transition: color 0.15s;
+}
+.subtask-text.done {
+color: var(--text-muted);
+text-decoration: line-through;
+text-decoration-color: rgba(138,154,176,0.5);
+}
+
+.subtask-del {
+background: none;
+border: none;
+color: var(--text-muted);
+cursor: pointer;
+font-size: 13px;
+opacity: 0;
+transition: opacity 0.15s, color 0.15s;
+padding: 2px 4px;
+flex-shrink: 0;
+}
+.subtask-item:hover .subtask-del { opacity: 1; }
+.subtask-del:hover { color: #e07070; }
+
+.subtask-add-row {
+display: flex;
+gap: 8px;
+}
+
+.subtask-input {
+flex: 1;
+background: var(--navy);
+border: 1px solid var(--border);
+color: var(--text);
+padding: 10px 12px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.88rem;
+outline: none;
+transition: border-color 0.2s;
+border-radius: 2px;
+}
+.subtask-input:focus { border-color: var(--gold); }
+.subtask-input::placeholder { color: var(--text-muted); }
+
+.subtask-add-btn {
+background: rgba(201,146,42,0.15);
+border: 1px solid rgba(201,146,42,0.3);
+color: var(--gold);
+padding: 10px 16px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.85rem;
+cursor: pointer;
+border-radius: 2px;
+transition: background 0.15s;
+white-space: nowrap;
+}
+.subtask-add-btn:hover { background: rgba(201,146,42,0.25); }
+
+.no-subtasks {
+text-align: center;
+padding: 28px 0;
+color: var(--text-muted);
+font-size: 0.82rem;
+}
+
+/* Notes */
+.notes-section {
+margin-top: 24px;
+border-top: 1px solid var(--border);
+padding-top: 20px;
+}
+
+.notes-heading {
+font-size: 0.72rem;
+letter-spacing: 0.12em;
+text-transform: uppercase;
+color: var(--text-muted);
+margin-bottom: 12px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+}
+
+.notes-saved-indicator {
+font-size: 0.65rem;
+letter-spacing: 0.08em;
+color: var(--status-done);
+opacity: 0;
+transition: opacity 0.3s;
+}
+.notes-saved-indicator.visible { opacity: 1; }
+
+.notes-textarea {
+width: 100%;
+min-height: 120px;
+background: rgba(255,255,255,0.02);
+border: 1px solid var(--border);
+border-radius: 2px;
+color: var(--text);
+font-family: 'DM Sans', sans-serif;
+font-size: 0.85rem;
+line-height: 1.65;
+padding: 12px 14px;
+outline: none;
+resize: vertical;
+transition: border-color 0.2s, background 0.2s;
+}
+.notes-textarea:focus {
+border-color: rgba(201,146,42,0.45);
+background: rgba(255,255,255,0.035);
+}
+.notes-textarea::placeholder { color: rgba(138,154,176,0.5); font-style: italic; }
+
+/* Make cards clickable feel */
+.project-card { cursor: pointer; }
+
+/* Category manager */
+.cat-settings-btn {
+display: flex;
+align-items: center;
+gap: 7px;
+background: transparent;
+border: none;
+border-top: 1px solid var(--border);
+color: rgba(138,154,176,0.5);
+padding: 10px 48px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.72rem;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+cursor: pointer;
+width: 100%;
+text-align: left;
+transition: color 0.15s, background 0.15s;
+}
+.cat-settings-btn:hover { color: var(--gold); background: rgba(201,146,42,0.04); }
+.cat-settings-btn svg { opacity: 0.6; transition: opacity 0.15s; }
+.cat-settings-btn:hover svg { opacity: 1; }
+
+.cat-list-item {
+display: flex;
+align-items: center;
+gap: 8px;
+padding: 8px 10px;
+background: rgba(255,255,255,0.03);
+border: 1px solid var(--border);
+border-radius: 2px;
+}
+
+.cat-color-dot {
+width: 9px; height: 9px;
+border-radius: 50%;
+flex-shrink: 0;
+}
+
+.cat-name-input {
+flex: 1;
+background: transparent;
+border: none;
+color: var(--text);
+font-family: 'DM Sans', sans-serif;
+font-size: 0.88rem;
+outline: none;
+padding: 2px 4px;
+border-radius: 2px;
+transition: background 0.15s;
+}
+.cat-name-input:focus { background: rgba(255,255,255,0.06); }
+
+.cat-del-btn {
+background: none;
+border: none;
+color: rgba(138,154,176,0.4);
+cursor: pointer;
+font-size: 13px;
+padding: 2px 4px;
+transition: color 0.15s;
+flex-shrink: 0;
+}
+.cat-del-btn:hover { color: #e07070; }
+.ideas-section {
+border-top: 1px solid var(--border);
+}
+
+.ideas-header {
+padding: 20px 48px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 16px;
+user-select: none;
+}
+
+.ideas-title-row {
+display: flex;
+align-items: center;
+gap: 14px;
+}
+
+.ideas-heading {
+font-family: 'Cormorant Garamond', serif;
+font-size: 1.4rem;
+font-weight: 600;
+color: var(--text-muted);
+letter-spacing: 0.01em;
+line-height: 1;
+}
+
+.ideas-count-pill {
+background: rgba(201,146,42,0.12);
+color: var(--gold);
+font-size: 0.7rem;
+padding: 3px 9px;
+border-radius: 10px;
+letter-spacing: 0.04em;
+}
+
+.ideas-subheading {
+font-size: 0.72rem;
+color: rgba(138,154,176,0.45);
+letter-spacing: 0.06em;
+text-transform: uppercase;
+margin-left: 2px;
+}
+
+.ideas-body {
+display: flex;
+flex-direction: column;
+padding-bottom: 32px;
+}
+
+.mindmap-canvas-wrap {
+position: relative;
+width: 100%;
+overflow: visible;
+}
+
+#mindmap-canvas {
+display: block;
+width: 100%;
+}
+
+.ideas-add-row {
+display: flex;
+gap: 10px;
+align-items: flex-start;
+padding: 0 48px;
+margin-top: 4px;
+}
+
+.ideas-add-fields {
+flex: 1;
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+
+.ideas-input-title {
+background: var(--navy);
+border: 1px solid var(--border);
+color: var(--text);
+padding: 10px 14px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.88rem;
+outline: none;
+border-radius: 2px;
+transition: border-color 0.2s;
+width: 100%;
+}
+.ideas-input-title:focus { border-color: var(--gold); }
+.ideas-input-title::placeholder { color: var(--text-muted); }
+
+.ideas-input-desc {
+background: var(--navy);
+border: 1px solid var(--border);
+color: var(--text);
+padding: 10px 14px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.85rem;
+outline: none;
+resize: none;
+border-radius: 2px;
+line-height: 1.5;
+transition: border-color 0.2s;
+width: 100%;
+}
+.ideas-input-desc:focus { border-color: var(--gold); }
+.ideas-input-desc::placeholder { color: var(--text-muted); }
+
+.ideas-add-btn {
+background: rgba(201,146,42,0.1);
+border: 1px solid rgba(201,146,42,0.25);
+color: var(--gold);
+padding: 10px 18px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.85rem;
+cursor: pointer;
+border-radius: 2px;
+transition: background 0.15s;
+white-space: nowrap;
+align-self: stretch;
+}
+.ideas-add-btn:hover { background: rgba(201,146,42,0.2); }
+
+.ideas-char-count {
+font-size: 0.67rem;
+color: rgba(138,154,176,0.45);
+text-align: right;
+letter-spacing: 0.04em;
+margin-top: -4px;
+transition: color 0.2s;
+}
+.ideas-char-count.warn { color: var(--gold); }
+.ideas-char-count.over { color: #e07070; }
+
+.idea-tooltip {
+position: absolute;
+background: var(--navy-mid);
+border: 1px solid var(--border);
+border-radius: 4px;
+padding: 16px;
+display: none;
+flex-direction: column;
+gap: 6px;
+z-index: 400;
+min-width: 220px;
+max-width: 280px;
+box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+pointer-events: all;
+}
+.idea-tooltip.visible { display: flex; }
+
+.idea-tooltip-title {
+font-family: 'Cormorant Garamond', serif;
+font-size: 1.1rem;
+font-weight: 600;
+color: var(--cream);
+line-height: 1.3;
+word-break: break-word;
+}
+
+.idea-tooltip-desc {
+font-size: 0.82rem;
+color: var(--text-muted);
+line-height: 1.55;
+border-top: 1px solid var(--border);
+padding-top: 8px;
+margin-top: 2px;
+font-style: italic;
+max-height: 120px;
+overflow-y: auto;
+word-break: break-word;
+scrollbar-width: thin;
+scrollbar-color: rgba(201,146,42,0.3) transparent;
+}
+.idea-tooltip-desc::-webkit-scrollbar { width: 4px; }
+.idea-tooltip-desc::-webkit-scrollbar-thumb { background: rgba(201,146,42,0.3); border-radius: 2px; }
+
+.idea-tooltip-meta {
+font-size: 0.67rem;
+color: rgba(138,154,176,0.45);
+letter-spacing: 0.04em;
+}
+
+.idea-tooltip-actions {
+display: flex;
+gap: 6px;
+margin-top: 4px;
+border-top: 1px solid var(--border);
+padding-top: 10px;
+}
+
+.tip-btn {
+flex: 1;
+padding: 6px 8px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.72rem;
+cursor: pointer;
+border-radius: 2px;
+border: none;
+transition: background 0.15s;
+letter-spacing: 0.04em;
+}
+.tip-btn.promote {
+background: rgba(201,146,42,0.15);
+color: var(--gold);
+border: 1px solid rgba(201,146,42,0.3);
+}
+.tip-btn.promote:hover { background: rgba(201,146,42,0.28); }
+.tip-btn.del {
+background: rgba(200,60,60,0.1);
+color: #e07070;
+border: 1px solid rgba(200,60,60,0.25);
+}
+.tip-btn.del:hover { background: rgba(200,60,60,0.22); }
+
+.ideas-empty-hint {
+text-align: center;
+padding: 32px 48px 16px;
+color: rgba(138,154,176,0.4);
+font-size: 0.8rem;
+font-style: italic;
+}
+
+/* ── Notifications ─────────────────────────────────── */
+
+/* Bell button in header */
+.notif-btn {
+position: relative;
+background: rgba(255,255,255,0.05);
+border: 1px solid var(--border);
+color: var(--text-muted);
+width: 40px; height: 40px;
+display: grid; place-items: center;
+cursor: pointer;
+border-radius: 2px;
+transition: background 0.15s, color 0.15s, border-color 0.15s;
+flex-shrink: 0;
+}
+.notif-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); border-color: rgba(201,146,42,0.4); }
+.notif-btn svg { width: 18px; height: 18px; }
+
+.notif-badge {
+position: absolute;
+top: -4px; right: -4px;
+background: #e07070;
+color: #fff;
+font-size: 0.6rem;
+font-weight: 600;
+min-width: 16px; height: 16px;
+border-radius: 8px;
+display: none;
+align-items: center;
+justify-content: center;
+padding: 0 4px;
+border: 2px solid var(--navy);
+line-height: 1;
+}
+.notif-badge.visible { display: flex; }
+
+/* Header right cluster */
+.header-right {
+display: flex;
+align-items: center;
+gap: 10px;
+}
+
+/* Notification panel overlay */
+.notif-overlay {
+position: fixed; inset: 0;
+background: rgba(5,12,22,0.5);
+backdrop-filter: blur(2px);
+z-index: 250;
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.2s;
+}
+.notif-overlay.open { opacity: 1; pointer-events: all; }
+
+/* Notification panel */
+.notif-panel {
+position: fixed;
+top: 0; right: 0; bottom: 0;
+width: 360px;
+max-width: 100vw;
+background: var(--navy-mid);
+border-left: 1px solid var(--border);
+display: flex;
+flex-direction: column;
+transform: translateX(100%);
+transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+z-index: 251;
+}
+.notif-overlay.open .notif-panel { transform: translateX(0); }
+
+.notif-panel-header {
+padding: 24px 24px 16px;
+border-bottom: 1px solid var(--border);
+display: flex;
+align-items: center;
+justify-content: space-between;
+flex-shrink: 0;
+}
+
+.notif-panel-title {
+font-family: 'Cormorant Garamond', serif;
+font-size: 1.4rem;
+font-weight: 600;
+color: var(--gold-light);
+}
+
+.notif-panel-actions {
+display: flex;
+align-items: center;
+gap: 8px;
+}
+
+.notif-clear-btn {
+font-size: 0.7rem;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+color: var(--text-muted);
+background: none;
+border: none;
+cursor: pointer;
+transition: color 0.15s;
+padding: 4px;
+}
+.notif-clear-btn:hover { color: var(--text); }
+
+/* Notification tabs */
+.notif-tabs {
+display: flex;
+border-bottom: 1px solid var(--border);
+flex-shrink: 0;
+}
+.notif-tab {
+flex: 1;
+padding: 12px;
+font-size: 0.75rem;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+text-align: center;
+cursor: pointer;
+background: none;
+border: none;
+color: var(--text-muted);
+border-bottom: 2px solid transparent;
+position: relative;
+bottom: -1px;
+font-family: 'DM Sans', sans-serif;
+transition: color 0.15s;
+}
+.notif-tab.active { color: var(--gold-light); border-bottom-color: var(--gold); }
+
+.notif-body {
+flex: 1;
+overflow-y: auto;
+padding: 16px;
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+
+.notif-empty {
+flex: 1;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+color: var(--text-muted);
+font-size: 0.82rem;
+gap: 8px;
+opacity: 0.5;
+padding: 40px 0;
+}
+.notif-empty-icon { font-size: 2rem; }
+
+/* Individual notification item */
+.notif-item {
+background: rgba(255,255,255,0.03);
+border: 1px solid transparent;
+border-left: 3px solid transparent;
+padding: 12px 14px;
+border-radius: 2px;
+transition: background 0.15s;
+animation: fadeUp 0.2s ease both;
+}
+.notif-item:hover { background: rgba(255,255,255,0.055); }
+.notif-item.unread { border-color: var(--border); }
+.notif-item.unread.overdue { border-left-color: #e07070; }
+.notif-item.unread.due-today { border-left-color: var(--gold); }
+.notif-item.unread.due-soon { border-left-color: var(--gold); }
+
+.notif-item-top {
+display: flex;
+align-items: flex-start;
+justify-content: space-between;
+gap: 8px;
+margin-bottom: 4px;
+}
+
+.notif-item-title {
+font-size: 0.88rem;
+color: var(--text);
+font-weight: 500;
+line-height: 1.3;
+}
+
+.notif-item-type {
+font-size: 0.65rem;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+padding: 2px 7px;
+border-radius: 2px;
+white-space: nowrap;
+flex-shrink: 0;
+}
+.notif-item-type.overdue { background: rgba(200,60,60,0.15); color: #e07070; }
+.notif-item-type.due-today { background: rgba(201,146,42,0.15); color: var(--gold-light); }
+.notif-item-type.due-soon { background: rgba(201,146,42,0.1); color: var(--gold); }
+
+.notif-item-detail {
+font-size: 0.78rem;
+color: var(--text-muted);
+line-height: 1.4;
+}
+
+/* Settings section inside panel */
+.notif-settings {
+padding: 16px;
+border-top: 1px solid var(--border);
+flex-shrink: 0;
+}
+
+.notif-settings-title {
+font-size: 0.7rem;
+letter-spacing: 0.12em;
+text-transform: uppercase;
+color: var(--text-muted);
+margin-bottom: 12px;
+}
+
+.notif-setting-row {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+margin-bottom: 10px;
+}
+
+.notif-setting-label {
+font-size: 0.82rem;
+color: var(--text);
+}
+
+.notif-setting-select {
+background: var(--navy);
+border: 1px solid var(--border);
+color: var(--text);
+padding: 5px 10px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.78rem;
+outline: none;
+border-radius: 2px;
+cursor: pointer;
+transition: border-color 0.15s;
+}
+.notif-setting-select:focus { border-color: var(--gold); }
+.notif-setting-select option { background: var(--navy-mid); }
+
+@media (max-width: 600px) {
+header, main { padding: 24px 20px; }
+.tabs { padding: 0 20px; }
+.tab { padding: 14px 16px; }
+.stats { grid-template-columns: 1fr; }
+.brand h1 { font-size: 1.9rem; }
+.detail-panel { width: 100vw; }
+.notif-panel { width: 100vw; }
+.ideas-header { padding-left: 20px; padding-right: 20px; }
+.ideas-add-row { padding-left: 20px; padding-right: 20px; }
+}
+</style>
+
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Project Tracker</h1>
+    <p>Manage your creative work</p>
+  </div>
+  <div class="header-right">
+    <button class="notif-btn" onclick="openNotifPanel()" title="Notifications" id="notif-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+      <span class="notif-badge" id="notif-badge"></span>
+    </button>
+    <button class="add-btn" onclick="openModal()">+ New Project</button>
+  </div>
+</header>
+
+<!-- Notification Panel -->
+
+<div class="notif-overlay" id="notif-overlay" onclick="handleNotifOverlayClick(event)">
+  <div class="notif-panel">
+    <div class="notif-panel-header">
+      <div class="notif-panel-title">Notifications</div>
+      <div class="notif-panel-actions">
+        <button class="notif-clear-btn" onclick="clearAllNotifs()">Clear all</button>
+        <button class="close-btn" onclick="closeNotifPanel()">✕</button>
+      </div>
+    </div>
+    <div class="notif-tabs">
+      <button class="notif-tab active" id="ntab-all" onclick="setNotifTab('all')">All</button>
+      <button class="notif-tab" id="ntab-overdue" onclick="setNotifTab('overdue')">Overdue</button>
+      <button class="notif-tab" id="ntab-upcoming" onclick="setNotifTab('upcoming')">Upcoming</button>
+    </div>
+    <div class="notif-body" id="notif-body"></div>
+    <div class="notif-settings">
+      <div class="notif-settings-title">Reminder Settings</div>
+      <div class="notif-setting-row">
+        <span class="notif-setting-label">Remind me before due date</span>
+        <select class="notif-setting-select" id="notif-lead-time" onchange="saveNotifSettings()">
+          <option value="0">On the day</option>
+          <option value="1">1 day before</option>
+          <option value="3" selected>3 days before</option>
+          <option value="7">1 week before</option>
+          <option value="14">2 weeks before</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav class="tabs" id="tabs"></nav>
+<button class="cat-settings-btn" onclick="openCatManager()" title="Manage categories">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  Manage Categories
+</button>
+
+<main>
+  <div class="stats" id="stats"></div>
+  <div class="projects-grid" id="grid"></div>
+</main>
+
+<!-- Ideas Section — Mind Map -->
+
+<section class="ideas-section">
+  <div class="ideas-header">
+    <div class="ideas-title-row">
+      <h2 class="ideas-heading">Ideas</h2>
+      <span class="ideas-count-pill" id="ideas-count-pill">0</span>
+      <span class="ideas-subheading">· click a node to explore</span>
+    </div>
+  </div>
+
+  <div class="ideas-body" id="ideas-body">
+    <div class="mindmap-canvas-wrap">
+      <canvas id="mindmap-canvas"></canvas>
+      <!-- Idea detail popup — lives inside canvas wrap for correct absolute positioning -->
+      <div class="idea-tooltip" id="idea-tooltip">
+        <div class="idea-tooltip-title" id="tip-title"></div>
+        <div class="idea-tooltip-desc" id="tip-desc"></div>
+        <div class="idea-tooltip-meta" id="tip-meta"></div>
+        <div class="idea-tooltip-actions">
+          <button class="tip-btn promote" id="tip-promote">→ Project</button>
+          <button class="tip-btn del" id="tip-delete">Delete</button>
+        </div>
+      </div>
+    </div>
+    <div id="ideas-empty-hint" class="ideas-empty-hint" style="display:none">Add your first idea below — it will appear in the mind map</div>
+    <div class="ideas-add-row">
+      <div class="ideas-add-fields">
+        <input class="ideas-input-title" id="ideas-input-title" placeholder="Idea title…" maxlength="80" oninput="updateCharCount('ideas-input-title','title-char-count',80)" onkeydown="ideasTitleKey(event)">
+        <div class="ideas-char-count" id="title-char-count">0 / 80</div>
+        <textarea class="ideas-input-desc" id="ideas-input-desc" placeholder="Description (optional)…" rows="2" maxlength="500" oninput="updateCharCount('ideas-input-desc','desc-char-count',500)" onkeydown="ideasDescKey(event)"></textarea>
+        <div class="ideas-char-count" id="desc-char-count">0 / 500</div>
+      </div>
+      <button class="ideas-add-btn" onclick="addIdea()">+ Add</button>
+    </div>
+  </div>
+</section>
+
+<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <h2 id="modal-title">New Project</h2>
+    <div class="form-group">
+      <label>Project Name</label>
+      <input type="text" id="f-name" placeholder="Enter project name…">
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="f-cat"></select>
+    </div>
+    <div class="form-group">
+      <label>Priority</label>
+      <div class="priority-options" id="priority-options">
+        <div class="priority-opt" data-val="low" onclick="selectPriority('low')">Low</div>
+        <div class="priority-opt" data-val="medium" onclick="selectPriority('medium')">Medium</div>
+        <div class="priority-opt" data-val="high" onclick="selectPriority('high')">High</div>
+        <div class="priority-opt" data-val="critical" onclick="selectPriority('critical')">Critical</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Due Date (optional)</label>
+      <input type="date" id="f-due">
+    </div>
+    <div class="form-group">
+      <label>Description (optional)</label>
+      <textarea id="f-desc" placeholder="Brief description…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveProject()">Save Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Panel -->
+
+<div class="detail-overlay" id="detail-overlay" onclick="handleDetailOverlayClick(event)">
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-header">
+      <div class="detail-close">
+        <span>Project Details</span>
+        <button class="close-btn" onclick="closeDetail()">✕</button>
+      </div>
+      <div class="detail-title" id="d-title"></div>
+      <div class="detail-badges" id="d-badges"></div>
+      <div class="detail-desc" id="d-desc"></div>
+    </div>
+    <div class="detail-body">
+      <div class="subtasks-heading">
+        <span>Subtasks</span>
+        <span id="d-subtask-count" style="color: var(--gold); font-family: 'Cormorant Garamond', serif; font-size: 1rem; letter-spacing: 0;"></span>
+      </div>
+      <div class="subtask-list" id="d-subtask-list"></div>
+      <div class="subtask-add-row">
+        <input class="subtask-input" id="subtask-input" placeholder="Add a subtask…" onkeydown="subtaskInputKey(event)">
+        <button class="subtask-add-btn" onclick="addSubtask()">+ Add</button>
+      </div>
+
+```
+  <div class="notes-section">
+    <div class="notes-heading">
+      <span>Notes</span>
+      <span class="notes-saved-indicator" id="notes-saved-indicator">Saved</span>
+    </div>
+    <textarea class="notes-textarea" id="notes-textarea" placeholder="Add notes, links, thoughts… anything relevant to this project." oninput="onNotesInput()"></textarea>
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- Category Manager Modal -->
+
+<div class="overlay" id="cat-manager-overlay" onclick="handleCatManagerOverlayClick(event)">
+  <div class="modal">
+    <h2>Manage Categories</h2>
+    <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:20px;line-height:1.5;">Rename or reorder your categories. Deleting a category will move all its projects to your first category.</p>
+    <div id="cat-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;"></div>
+    <div style="display:flex;gap:8px;align-items:center;border-top:1px solid var(--border);padding-top:16px;">
+      <input type="text" id="new-cat-input" placeholder="New category name…" style="flex:1;background:var(--navy);border:1px solid var(--border);color:var(--text);padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;border-radius:2px;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='rgba(201,146,42,0.2)'" onkeydown="if(event.key==='Enter')addCategory()">
+      <button class="btn-save" onclick="addCategory()" style="padding:9px 18px;white-space:nowrap;">+ Add</button>
+    </div>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-cancel" onclick="closeCatManager()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Dialog -->
+
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑</div>
+    <h3>Delete Project?</h3>
+    <p>Are you sure you want to delete <strong id="confirm-project-name"></strong>? This cannot be undone.</p>
+    <div class="confirm-actions">
+      <button class="btn-confirm-cancel" onclick="closeConfirm()">Keep it</button>
+      <button class="btn-confirm-delete" onclick="confirmDelete()">Yes, delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Categories (dynamic) ──────────────────────────────────
+const DEFAULT_CATS = ['Shaheedi Bunga', '365 Gurbani Words', 'Other'];
+let CAT_KEYS = JSON.parse(localStorage.getItem('pt_categories') || JSON.stringify(DEFAULT_CATS));
+let CATS = ['All', ...CAT_KEYS];
+const CAT_COLORS = ['#c9922a', '#4a8fa8', '#7a6a8f', '#5aab6d', '#a86a4a', '#4a6aa8', '#8f6a7a', '#6a8f7a'];
+const CAT_CSS = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6', 'cat7', 'cat8'];
+function getCatClass(cat) { const i = CAT_KEYS.indexOf(cat); return i >= 0 ? (CAT_CSS[i % CAT_CSS.length]) : 'cat1'; }
+function getCatColor(cat) { const i = CAT_KEYS.indexOf(cat); return i >= 0 ? CAT_COLORS[i % CAT_COLORS.length] : CAT_COLORS[0]; }
+function saveCategories() { localStorage.setItem('pt_categories', JSON.stringify(CAT_KEYS)); CATS = ['All', ...CAT_KEYS]; }
+function renderCatDropdown(selectedVal) {
+  const sel = document.getElementById('f-cat');
+  sel.innerHTML = CAT_KEYS.map(c => `<option value="${c}" ${c === selectedVal ? 'selected' : ''}>${c}</option>`).join('');
+}
+const STATUS_LABEL = { todo: 'To Do', progress: 'In Progress', done: 'Done' };
+const PRIORITY_LABEL = { low: 'Low', medium: 'Medium', high: 'High', critical: 'Critical' };
+
+let projects = JSON.parse(localStorage.getItem('pt_projects') || '[]');
+let activeTab = 'All';
+let editingId = null;
+let selectedPriority = 'medium';
+let detailId = null;
+
+function save() { localStorage.setItem('pt_projects', JSON.stringify(projects)); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+// ── Category Manager ──────────────────────────────────────
+function openCatManager() {
+  renderCatList();
+  document.getElementById('cat-manager-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('new-cat-input').focus(), 150);
+}
+
+function closeCatManager() {
+  document.getElementById('cat-manager-overlay').classList.remove('open');
+  // Save any renamed categories from inputs
+  document.querySelectorAll('.cat-name-input').forEach((input, i) => {
+    const oldName = CAT_KEYS[i];
+    const newName = input.value.trim();
+    if (newName && newName !== oldName) renameCategory(oldName, newName, i, false);
+  });
+  saveCategories();
+  render();
+}
+
+function handleCatManagerOverlayClick(e) {
+  if (e.target === document.getElementById('cat-manager-overlay')) closeCatManager();
+}
+
+function renderCatList() {
+  const list = document.getElementById('cat-list');
+  list.innerHTML = CAT_KEYS.map((cat, i) => `
+    <div class="cat-list-item">
+      <div class="cat-color-dot" style="background:${getCatColor(cat)}"></div>
+      <input class="cat-name-input" data-idx="${i}" value="${cat}" placeholder="Category name…" onblur="renameCatFromInput(this)" onkeydown="if(event.key==='Enter')this.blur()">
+      <span style="font-size:0.72rem;color:var(--text-muted);margin-right:4px;">${projects.filter(p=>p.cat===cat).length} projects</span>
+      ${CAT_KEYS.length > 1 ? `<button class="cat-del-btn" onclick="deleteCategory('${cat.replace(/'/g,"\\'")}')">✕</button>` : ''}
+    </div>
+  `).join('');
+}
+
+function renameCatFromInput(input) {
+  const i = parseInt(input.dataset.idx);
+  const oldName = CAT_KEYS[i];
+  const newName = input.value.trim();
+  if (!newName || newName === oldName) { input.value = oldName; return; }
+  // Check for duplicate
+  if (CAT_KEYS.includes(newName) && CAT_KEYS.indexOf(newName) !== i) {
+    input.value = oldName;
+    return;
+  }
+  renameCategory(oldName, newName, i, true);
+}
+
+function renameCategory(oldName, newName, idx, doSave) {
+  CAT_KEYS[idx] = newName;
+  // Update all projects in that category
+  projects.forEach(p => { if (p.cat === oldName) p.cat = newName; });
+  if (activeTab === oldName) activeTab = newName;
+  if (doSave) { saveCategories(); save(); renderCatList(); render(); }
+}
+
+function addCategory() {
+  const input = document.getElementById('new-cat-input');
+  const name = input.value.trim();
+  if (!name || CAT_KEYS.includes(name)) { input.focus(); return; }
+  if (CAT_KEYS.length >= 8) { 
+    input.placeholder = 'Maximum 8 categories';
+    return; 
+  }
+  CAT_KEYS.push(name);
+  saveCategories();
+  input.value = '';
+  input.placeholder = 'New category name…';
+  renderCatList();
+  render();
+}
+
+function deleteCategory(cat) {
+  if (CAT_KEYS.length <= 1) return;
+  const fallback = CAT_KEYS.find(c => c !== cat) || CAT_KEYS[0];
+  // Move projects to fallback category
+  projects.forEach(p => { if (p.cat === cat) p.cat = fallback; });
+  CAT_KEYS.splice(CAT_KEYS.indexOf(cat), 1);
+  if (activeTab === cat) activeTab = 'All';
+  saveCategories();
+  save();
+  renderCatList();
+  render();
+}
+
+function selectPriority(val) {
+  selectedPriority = val;
+  document.querySelectorAll('.priority-opt').forEach(el => {
+    el.className = 'priority-opt';
+    if (el.dataset.val === val) el.classList.add(`selected-${val}`);
+  });
+}
+
+function formatDueDate(dateStr) {
+  if (!dateStr) return null;
+  const due = new Date(dateStr + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((due - today) / 86400000);
+  const label = due.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  let cls = '';
+  if (diff < 0) cls = 'overdue';
+  else if (diff <= 3) cls = 'soon';
+  const indicator = diff < 0 ? ` · ${Math.abs(diff)}d overdue` : diff === 0 ? ' · Today!' : diff <= 3 ? ` · ${diff}d left` : '';
+  return { label: label + indicator, cls };
+}
+
+const calIcon = `<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="10" height="9" rx="1.5"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="1" y1="5" x2="11" y2="5"/></svg>`;
+
+function render() { renderTabs(); renderStats(); renderGrid(); }
+
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = CATS.map(cat => {
+    const count = cat === 'All' ? projects.length : projects.filter(p => p.cat === cat).length;
+    return `<button class="tab ${activeTab === cat ? 'active' : ''}" onclick="setTab('${cat}')">${cat} <span class="count">${count}</span></button>`;
+  }).join('');
+}
+
+function renderStats() {
+  const el = document.getElementById('stats');
+  el.innerHTML = CAT_KEYS.map((cat) => {
+    const count = projects.filter(p => p.cat === cat).length;
+    return `<div class="stat-card">
+      <div class="stat-dot" style="background:${getCatColor(cat)}"></div>
+      <div class="stat-info">
+        <div class="stat-label">${cat}</div>
+        <div class="stat-count">${count}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  const filtered = activeTab === 'All' ? projects : projects.filter(p => p.cat === activeTab);
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">✦</div><h3>No projects yet</h3><p>Click "New Project" to get started.</p></div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map((p, i) => {
+    const due = p.due ? formatDueDate(p.due) : null;
+    const priority = p.priority || 'medium';
+    const subtasks = p.subtasks || [];
+    const total = subtasks.length;
+    const done = subtasks.filter(s => s.done).length;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    const progressHTML = total > 0 ? `
+      <div class="subtask-progress">
+        <div class="subtask-progress-label"><span>Subtasks</span><span>${done}/${total}</span></div>
+        <div class="progress-track"><div class="progress-fill ${pct === 100 ? 'complete' : ''}" style="width:${pct}%"></div></div>
+      </div>` : '';
+    return `
+    <div class="project-card" data-cat="${p.cat}" style="animation-delay:${i*0.04}s;--card-cat-color:${getCatColor(p.cat)}" onclick="openDetail('${p.id}')">
+      <div class="card-header">
+        <div class="card-title">${p.name}</div>
+        <div class="card-actions">
+          <button class="icon-btn" onclick="event.stopPropagation();editProject('${p.id}')" title="Edit">✎</button>
+          <button class="icon-btn delete" onclick="event.stopPropagation();deleteProject('${p.id}')" title="Delete">✕</button>
+        </div>
+      </div>
+      <div class="card-meta">
+        <span class="priority-badge ${priority}">${PRIORITY_LABEL[priority]}</span>
+        <span class="status-badge ${p.status}">${STATUS_LABEL[p.status]}</span>
+      </div>
+      <div class="card-desc">${p.desc || ''}</div>
+      ${progressHTML}
+      <div class="card-footer" style="margin-top:${total>0?'12px':'0'}">
+        <span class="cat-tag ${getCatClass(p.cat)}">${p.cat}</span>
+        ${due ? `<span class="due-date ${due.cls}">${calIcon}${due.label}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setTab(cat) { activeTab = cat; render(); }
+
+// ── Detail Panel ──────────────────────────────────────────
+function openDetail(id) {
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+  detailId = id;
+  renderDetail(p);
+  document.getElementById('detail-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('subtask-input').focus(), 320);
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('open');
+  detailId = null;
+}
+
+function handleDetailOverlayClick(e) {
+  if (e.target === document.getElementById('detail-overlay')) closeDetail();
+}
+
+function renderDetail(p) {
+  document.getElementById('d-title').textContent = p.name;
+  const due = p.due ? formatDueDate(p.due) : null;
+  const priority = p.priority || 'medium';
+  document.getElementById('d-badges').innerHTML = `
+    <span class="priority-badge ${priority}">${PRIORITY_LABEL[priority]}</span>
+    <span class="status-badge ${p.status}">${STATUS_LABEL[p.status]}</span>
+    <span class="cat-tag ${getCatClass(p.cat)}">${p.cat}</span>
+    ${due ? `<span class="due-date ${due.cls}" style="margin-top:0">${calIcon}${due.label}</span>` : ''}
+  `;
+  const descEl = document.getElementById('d-desc');
+  descEl.textContent = p.desc || '';
+  descEl.style.display = p.desc ? 'block' : 'none';
+  // Load notes
+  const notesEl = document.getElementById('notes-textarea');
+  notesEl.value = p.notes || '';
+  document.getElementById('notes-saved-indicator').classList.remove('visible');
+  renderSubtasks(p);
+}
+
+function renderSubtasks(p) {
+  const subtasks = p.subtasks || [];
+  const done = subtasks.filter(s => s.done).length;
+  const total = subtasks.length;
+  document.getElementById('d-subtask-count').textContent = total > 0 ? `${done}/${total}` : '';
+  const list = document.getElementById('d-subtask-list');
+  if (subtasks.length === 0) {
+    list.innerHTML = `<div class="no-subtasks">No subtasks yet — add one below</div>`;
+    return;
+  }
+  list.innerHTML = subtasks.map((s, i) => `
+    <div class="subtask-item">
+      <div class="subtask-check ${s.done ? 'checked' : ''}" onclick="toggleSubtask('${p.id}', ${i})"></div>
+      <span class="subtask-text ${s.done ? 'done' : ''}">${s.text}</span>
+      <button class="subtask-del" onclick="deleteSubtask('${p.id}', ${i})" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function addSubtask() {
+  const input = document.getElementById('subtask-input');
+  const text = input.value.trim();
+  if (!text || !detailId) return;
+  const p = projects.find(p => p.id === detailId);
+  if (!p) return;
+  if (!p.subtasks) p.subtasks = [];
+  p.subtasks.push({ text, done: false, id: uid() });
+  save();
+  renderSubtasks(p);
+  render();
+  input.value = '';
+  input.focus();
+}
+
+function toggleSubtask(projectId, index) {
+  const p = projects.find(p => p.id === projectId);
+  if (!p || !p.subtasks) return;
+  p.subtasks[index].done = !p.subtasks[index].done;
+  save();
+  renderSubtasks(p);
+  render();
+}
+
+function deleteSubtask(projectId, index) {
+  const p = projects.find(p => p.id === projectId);
+  if (!p || !p.subtasks) return;
+  p.subtasks.splice(index, 1);
+  save();
+  renderSubtasks(p);
+  render();
+}
+
+function subtaskInputKey(e) { if (e.key === 'Enter') addSubtask(); }
+
+// ── Notes ─────────────────────────────────────────────────
+let notesSaveTimer = null;
+
+function onNotesInput() {
+  // Clear the saved indicator while typing
+  document.getElementById('notes-saved-indicator').classList.remove('visible');
+  clearTimeout(notesSaveTimer);
+  notesSaveTimer = setTimeout(saveNotes, 800);
+}
+
+function saveNotes() {
+  if (!detailId) return;
+  const p = projects.find(p => p.id === detailId);
+  if (!p) return;
+  p.notes = document.getElementById('notes-textarea').value;
+  save();
+  // Flash "Saved" indicator
+  const indicator = document.getElementById('notes-saved-indicator');
+  indicator.classList.add('visible');
+  setTimeout(() => indicator.classList.remove('visible'), 2000);
+}
+
+// ── Project Modal ─────────────────────────────────────────
+function openModal(reset = true) {
+  if (reset) {
+    editingId = null;
+    document.getElementById('modal-title').textContent = 'New Project';
+    document.getElementById('f-name').value = '';
+    renderCatDropdown(CAT_KEYS[0]);
+    document.getElementById('f-desc').value = '';
+    document.getElementById('f-due').value = '';
+    selectPriority('medium');
+  }
+  document.getElementById('overlay').classList.add('open');
+  setTimeout(() => document.getElementById('f-name').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  editingId = null;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('overlay')) closeModal();
+}
+
+function saveProject() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { document.getElementById('f-name').focus(); return; }
+  const data = {
+    name,
+    cat: document.getElementById('f-cat').value,
+    status: editingId ? (projects.find(p => p.id === editingId)?.status || 'todo') : 'todo',
+    desc: document.getElementById('f-desc').value.trim(),
+    priority: selectedPriority,
+    due: document.getElementById('f-due').value || '',
+  };
+  if (editingId) {
+    const idx = projects.findIndex(p => p.id === editingId);
+    if (idx > -1) projects[idx] = { ...projects[idx], ...data };
+  } else {
+    projects.unshift({ id: uid(), ...data, created: Date.now(), subtasks: [] });
+  }
+  save();
+  closeModal();
+  render();
+}
+
+function editProject(id) {
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = 'Edit Project';
+  document.getElementById('f-name').value = p.name;
+  renderCatDropdown(p.cat);
+  document.getElementById('f-desc').value = p.desc || '';
+  document.getElementById('f-due').value = p.due || '';
+  selectPriority(p.priority || 'medium');
+  openModal(false);
+}
+
+let pendingDeleteId = null;
+
+function deleteProject(id) {
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+  pendingDeleteId = id;
+  document.getElementById('confirm-project-name').textContent = p.name;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  pendingDeleteId = null;
+}
+
+function confirmDelete() {
+  if (!pendingDeleteId) return;
+  projects = projects.filter(p => p.id !== pendingDeleteId);
+  if (detailId === pendingDeleteId) closeDetail();
+  save();
+  render();
+  closeConfirm();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('confirm-overlay').classList.contains('open')) closeConfirm();
+    else if (document.getElementById('notif-overlay').classList.contains('open')) closeNotifPanel();
+    else if (document.getElementById('cat-manager-overlay').classList.contains('open')) closeCatManager();
+    else if (document.getElementById('overlay').classList.contains('open')) closeModal();
+    else if (document.getElementById('detail-overlay').classList.contains('open')) closeDetail();
+  }
+  if (e.key === 'Enter' && document.getElementById('overlay').classList.contains('open') && e.target.tagName !== 'TEXTAREA') {
+    saveProject();
+  }
+});
+
+// ── Ideas Mind Map ────────────────────────────────────────
+let ideas = JSON.parse(localStorage.getItem('pt_ideas') || '[]');
+let activeTooltipIdx = null;
+
+function saveIdeas() { localStorage.setItem('pt_ideas', JSON.stringify(ideas)); }
+
+function updateIdeasCount() {
+  document.getElementById('ideas-count-pill').textContent = ideas.length;
+}
+
+function drawMindMap() {
+  const canvas = document.getElementById('mindmap-canvas');
+  const wrap = canvas.parentElement;
+  const W = wrap.offsetWidth;
+  const emptyHint = document.getElementById('ideas-empty-hint');
+
+  if (ideas.length === 0) {
+    canvas.style.display = 'none';
+    emptyHint.style.display = 'block';
+    return;
+  }
+
+  emptyHint.style.display = 'none';
+  canvas.style.display = 'block';
+
+  const count = ideas.length;
+  const H = Math.max(280, Math.min(500, 190 + count * 50));
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.parentElement.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  ctx.clearRect(0, 0, W, H);
+
+  const cx = W / 2;
+  const cy = H / 2;
+  const centerR = 44;
+
+  const palette = [
+    { stroke: '#c9922a', fill: 'rgba(201,146,42,0.13)', text: '#e8b84b' },
+    { stroke: '#4a8fa8', fill: 'rgba(74,143,168,0.13)',  text: '#7dc4d8' },
+    { stroke: '#7a6a8f', fill: 'rgba(122,106,143,0.13)', text: '#a99ec0' },
+    { stroke: '#5aab6d', fill: 'rgba(90,171,109,0.11)',  text: '#7dc491' },
+    { stroke: '#a86a4a', fill: 'rgba(168,106,74,0.13)',  text: '#d4956e' },
+    { stroke: '#4a6aa8', fill: 'rgba(74,106,168,0.13)',  text: '#7d9cd8' },
+  ];
+
+  const angles = [];
+  for (let i = 0; i < count; i++) {
+    angles.push((2 * Math.PI * i) / count - Math.PI / 2);
+  }
+
+  const outerR = Math.min(W * 0.34, H * 0.36, 185);
+
+  // Draw branches
+  angles.forEach((angle, i) => {
+    const nx = cx + outerR * Math.cos(angle);
+    const ny = cy + outerR * Math.sin(angle);
+    const col = palette[i % palette.length];
+    const cp1x = cx + (outerR * 0.45) * Math.cos(angle - 0.3);
+    const cp1y = cy + (outerR * 0.45) * Math.sin(angle - 0.3);
+    const cp2x = cx + (outerR * 0.75) * Math.cos(angle + 0.15);
+    const cp2y = cy + (outerR * 0.75) * Math.sin(angle + 0.15);
+
+    ctx.beginPath();
+    ctx.moveTo(cx + centerR * Math.cos(angle), cy + centerR * Math.sin(angle));
+    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, nx, ny);
+    ctx.strokeStyle = col.stroke;
+    ctx.globalAlpha = activeTooltipIdx === i ? 0.6 : 0.28;
+    ctx.lineWidth = activeTooltipIdx === i ? 2 : 1.5;
+    ctx.setLineDash([4, 5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  });
+
+  // Center node
+  ctx.beginPath();
+  ctx.arc(cx, cy, centerR, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(201,146,42,0.13)';
+  ctx.fill();
+  ctx.strokeStyle = '#c9922a';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = '#e8b84b';
+  ctx.font = `600 13px 'DM Sans', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Ideas', cx, cy);
+
+  // Idea nodes
+  const nodePositions = [];
+  angles.forEach((angle, i) => {
+    const idea = ideas[i];
+    const col = palette[i % palette.length];
+    const nx = cx + outerR * Math.cos(angle);
+    const ny = cy + outerR * Math.sin(angle);
+    const isActive = activeTooltipIdx === i;
+
+    // Fixed node radius — clean and consistent
+    const nodeR = 34;
+    nodePositions.push({ x: nx, y: ny, r: nodeR, idx: i });
+
+    // Active glow ring
+    if (isActive) {
+      ctx.beginPath();
+      ctx.arc(nx, ny, nodeR + 7, 0, Math.PI * 2);
+      ctx.strokeStyle = col.stroke;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.25;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.beginPath();
+    ctx.arc(nx, ny, nodeR, 0, Math.PI * 2);
+    ctx.fillStyle = col.fill;
+    ctx.fill();
+    ctx.strokeStyle = col.stroke;
+    ctx.lineWidth = isActive ? 2 : 1.5;
+    ctx.globalAlpha = isActive ? 1 : 0.72;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Title text in node — use idea.title
+    const title = idea.title || idea.text || '';
+    ctx.fillStyle = col.text;
+    ctx.font = `500 10px 'DM Sans', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Word wrap up to 2 lines
+    const words = title.split(' ');
+    let lines = [''];
+    words.forEach(w => {
+      const test = lines[lines.length-1] + (lines[lines.length-1] ? ' ' : '') + w;
+      if (ctx.measureText(test).width < nodeR * 1.7) {
+        lines[lines.length-1] = test;
+      } else {
+        if (lines.length < 2) lines.push(w);
+        else lines[lines.length-1] = lines[lines.length-1].trimEnd() + '…';
+      }
+    });
+    // Truncate if still too wide
+    lines = lines.map(l => ctx.measureText(l).width > nodeR * 1.8 ? l.slice(0, Math.floor(nodeR / 3.5)) + '…' : l);
+
+    // Small desc indicator dot if there's a description
+    if (idea.desc) {
+      ctx.beginPath();
+      ctx.arc(nx + nodeR - 6, ny - nodeR + 6, 3, 0, Math.PI * 2);
+      ctx.fillStyle = col.stroke;
+      ctx.globalAlpha = 0.8;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    const lineH = 13;
+    const startY = ny - ((lines.length - 1) * lineH) / 2;
+    lines.forEach((line, li) => ctx.fillText(line, nx, startY + li * lineH));
+  });
+
+  canvas._nodes = nodePositions;
+}
+
+function showTooltip(idx, nx, ny) {
+  const idea = ideas[idx];
+  if (!idea) return;
+  activeTooltipIdx = idx;
+
+  const title = idea.title || idea.text || '';
+  const desc = idea.desc || '';
+
+  document.getElementById('tip-title').textContent = title;
+
+  const descEl = document.getElementById('tip-desc');
+  if (desc) {
+    descEl.textContent = desc;
+    descEl.style.display = 'block';
+  } else {
+    descEl.style.display = 'none';
+  }
+
+  document.getElementById('tip-meta').textContent =
+    new Date(idea.created).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+
+  document.getElementById('tip-promote').onclick = () => promoteIdea(idx);
+  document.getElementById('tip-delete').onclick = () => deleteIdea(idx);
+
+  const tip = document.getElementById('idea-tooltip');
+  const wrap = document.querySelector('.mindmap-canvas-wrap');
+  const tipW = 240;
+  const tipH = desc ? Math.min(280, 160 + Math.floor(desc.length / 40) * 18) : 140;
+
+  // nx/ny are canvas pixel coords — position tooltip relative to the wrap
+  let tx = nx + 16;
+  let ty = ny - 20;
+
+  // Keep within wrap bounds
+  const wrapW = wrap.offsetWidth;
+  const wrapH = wrap.offsetHeight;
+
+  if (tx + tipW > wrapW - 8) tx = nx - tipW - 16;
+  if (tx < 8) tx = 8;
+  if (ty + tipH > wrapH - 8) ty = wrapH - tipH - 8;
+  if (ty < 8) ty = 8;
+
+  tip.style.left = tx + 'px';
+  tip.style.top = ty + 'px';
+  tip.classList.add('visible');
+
+  drawMindMap();
+}
+
+function hideTooltip() {
+  document.getElementById('idea-tooltip').classList.remove('visible');
+  activeTooltipIdx = null;
+  drawMindMap();
+}
+
+// Canvas interaction
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('mindmap-canvas');
+
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const nodes = canvas._nodes || [];
+    let hit = null;
+    nodes.forEach(n => {
+      if (Math.sqrt((mx - n.x) ** 2 + (my - n.y) ** 2) <= n.r) hit = n;
+    });
+    if (hit) {
+      if (activeTooltipIdx === hit.idx) hideTooltip();
+      else showTooltip(hit.idx, hit.x, hit.y);
+    } else {
+      hideTooltip();
+    }
+  });
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const nodes = canvas._nodes || [];
+    canvas.style.cursor = nodes.some(n => Math.sqrt((mx-n.x)**2+(my-n.y)**2) <= n.r) ? 'pointer' : 'default';
+  });
+
+  // Initial draw
+  drawMindMap();
+});
+
+document.addEventListener('click', (e) => {
+  const tip = document.getElementById('idea-tooltip');
+  const canvas = document.getElementById('mindmap-canvas');
+  if (!tip.contains(e.target) && e.target !== canvas) {
+    if (activeTooltipIdx !== null) hideTooltip();
+  }
+});
+
+window.addEventListener('resize', () => drawMindMap());
+
+function updateCharCount(inputId, counterId, max) {
+  const len = document.getElementById(inputId).value.length;
+  const el = document.getElementById(counterId);
+  el.textContent = `${len} / ${max}`;
+  el.className = 'ideas-char-count' + (len >= max ? ' over' : len >= max * 0.85 ? ' warn' : '');
+}
+
+function addIdea() {
+  const titleInput = document.getElementById('ideas-input-title');
+  const descInput = document.getElementById('ideas-input-desc');
+  const title = titleInput.value.trim();
+  if (!title) { titleInput.focus(); return; }
+  const desc = descInput.value.trim();
+  ideas.unshift({ title, desc, text: title, created: Date.now(), id: uid() });
+  saveIdeas();
+  updateIdeasCount();
+  titleInput.value = '';
+  descInput.value = '';
+  // Reset char counters
+  document.getElementById('title-char-count').textContent = '0 / 80';
+  document.getElementById('title-char-count').className = 'ideas-char-count';
+  document.getElementById('desc-char-count').textContent = '0 / 500';
+  document.getElementById('desc-char-count').className = 'ideas-char-count';
+  titleInput.focus();
+  hideTooltip();
+  drawMindMap();
+}
+
+function deleteIdea(index) {
+  ideas.splice(index, 1);
+  saveIdeas();
+  updateIdeasCount();
+  hideTooltip();
+  drawMindMap();
+}
+
+function promoteIdea(index) {
+  const idea = ideas[index];
+  if (!idea) return;
+  const title = idea.title || idea.text || '';
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'New Project';
+  document.getElementById('f-name').value = title.slice(0, 60);
+  renderCatDropdown(CAT_KEYS[0]);
+  document.getElementById('f-desc').value = idea.desc || '';
+  document.getElementById('f-due').value = '';
+  selectPriority('medium');
+  document.getElementById('overlay').classList.add('open');
+  ideas.splice(index, 1);
+  saveIdeas();
+  updateIdeasCount();
+  hideTooltip();
+  drawMindMap();
+  setTimeout(() => document.getElementById('f-name').focus(), 120);
+}
+
+function ideasTitleKey(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('ideas-input-desc').focus();
+  }
+}
+
+function ideasDescKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    addIdea();
+  }
+}
+
+// ── Notifications ─────────────────────────────────────────
+let notifSettings = JSON.parse(localStorage.getItem('pt_notif_settings') || '{"leadDays":3}');
+let dismissedNotifs = JSON.parse(localStorage.getItem('pt_dismissed_notifs') || '[]');
+let activeNotifTab = 'all';
+
+function saveNotifSettings() {
+  notifSettings.leadDays = parseInt(document.getElementById('notif-lead-time').value);
+  localStorage.setItem('pt_notif_settings', JSON.stringify(notifSettings));
+  refreshNotifBadge();
+  if (document.getElementById('notif-overlay').classList.contains('open')) renderNotifPanel();
+}
+
+function getNotifications() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const leadMs = notifSettings.leadDays * 86400000;
+  const notifs = [];
+
+  projects.forEach(p => {
+    if (!p.due || p.status === 'done') return;
+    const due = new Date(p.due); due.setHours(0,0,0,0);
+    const diff = Math.round((due - today) / 86400000); // days from today
+
+    if (diff < 0) {
+      notifs.push({ id: `overdue-${p.id}`, type: 'overdue', project: p, diff });
+    } else if (diff === 0) {
+      notifs.push({ id: `today-${p.id}`, type: 'due-today', project: p, diff });
+    } else if (diff <= notifSettings.leadDays) {
+      notifs.push({ id: `soon-${p.id}-${diff}`, type: 'due-soon', project: p, diff });
+    }
+  });
+
+  // Sort: overdue first (worst first), then soonest upcoming
+  notifs.sort((a, b) => a.diff - b.diff);
+  return notifs;
+}
+
+function getUnreadNotifs() {
+  return getNotifications().filter(n => !dismissedNotifs.includes(n.id));
+}
+
+function refreshNotifBadge() {
+  const unread = getUnreadNotifs();
+  const badge = document.getElementById('notif-badge');
+  if (unread.length > 0) {
+    badge.textContent = unread.length > 9 ? '9+' : unread.length;
+    badge.classList.add('visible');
+  } else {
+    badge.classList.remove('visible');
+  }
+}
+
+function openNotifPanel() {
+  // Load saved lead time setting into selector
+  document.getElementById('notif-lead-time').value = notifSettings.leadDays;
+  renderNotifPanel();
+  document.getElementById('notif-overlay').classList.add('open');
+}
+
+function closeNotifPanel() {
+  document.getElementById('notif-overlay').classList.remove('open');
+}
+
+function handleNotifOverlayClick(e) {
+  if (e.target === document.getElementById('notif-overlay')) closeNotifPanel();
+}
+
+function setNotifTab(tab) {
+  activeNotifTab = tab;
+  document.querySelectorAll('.notif-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`ntab-${tab}`).classList.add('active');
+  renderNotifPanel();
+}
+
+function clearAllNotifs() {
+  const all = getNotifications();
+  all.forEach(n => { if (!dismissedNotifs.includes(n.id)) dismissedNotifs.push(n.id); });
+  localStorage.setItem('pt_dismissed_notifs', JSON.stringify(dismissedNotifs));
+  refreshNotifBadge();
+  renderNotifPanel();
+}
+
+function dismissNotif(id) {
+  if (!dismissedNotifs.includes(id)) dismissedNotifs.push(id);
+  localStorage.setItem('pt_dismissed_notifs', JSON.stringify(dismissedNotifs));
+  refreshNotifBadge();
+  renderNotifPanel();
+}
+
+function renderNotifPanel() {
+  const body = document.getElementById('notif-body');
+  let notifs = getNotifications();
+
+  if (activeNotifTab === 'overdue') notifs = notifs.filter(n => n.type === 'overdue');
+  if (activeNotifTab === 'upcoming') notifs = notifs.filter(n => n.type === 'due-today' || n.type === 'due-soon');
+
+  if (notifs.length === 0) {
+    body.innerHTML = `<div class="notif-empty">
+      <div class="notif-empty-icon">🔔</div>
+      <div>${activeNotifTab === 'overdue' ? 'No overdue projects' : activeNotifTab === 'upcoming' ? 'Nothing coming up' : 'You\'re all caught up!'}</div>
+    </div>`;
+    return;
+  }
+
+  body.innerHTML = notifs.map(n => {
+    const isUnread = !dismissedNotifs.includes(n.id);
+    const p = n.project;
+    const typeLabel = n.type === 'overdue' ? 'Overdue' : n.type === 'due-today' ? 'Due Today' : 'Upcoming';
+    const detail = n.type === 'overdue'
+      ? `${Math.abs(n.diff)} day${Math.abs(n.diff) !== 1 ? 's' : ''} overdue · ${p.cat}`
+      : n.type === 'due-today'
+      ? `Due today · ${p.cat}`
+      : `Due in ${n.diff} day${n.diff !== 1 ? 's' : ''} · ${p.cat}`;
+
+    return `<div class="notif-item ${n.type} ${isUnread ? 'unread' : ''}" style="animation-delay:${notifs.indexOf(n)*0.04}s">
+      <div class="notif-item-top">
+        <div class="notif-item-title">${p.name}</div>
+        <div class="notif-item-type ${n.type}">${typeLabel}</div>
+      </div>
+      <div class="notif-item-detail">${detail}</div>
+      ${isUnread ? `<div style="margin-top:8px;display:flex;gap:8px;">
+        <button onclick="dismissNotif('${n.id}')" style="background:none;border:none;color:var(--text-muted);font-size:0.72rem;cursor:pointer;letter-spacing:0.04em;padding:0;font-family:'DM Sans',sans-serif;transition:color 0.15s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-muted)'">Dismiss</button>
+        <button onclick="closeNotifPanel();setActiveTab('${p.cat}');scrollToProject('${p.id}')" style="background:none;border:none;color:var(--gold);font-size:0.72rem;cursor:pointer;letter-spacing:0.04em;padding:0;font-family:'DM Sans',sans-serif;transition:color 0.15s;" onmouseover="this.style.color='var(--gold-light)'" onmouseout="this.style.color='var(--gold)'">View project →</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function setActiveTab(cat) {
+  activeTab = cat;
+  render();
+}
+
+function scrollToProject(id) {
+  // Brief highlight flash on the card
+  setTimeout(() => {
+    const card = document.querySelector(`[data-project-id="${id}"]`);
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.style.outline = '2px solid var(--gold)';
+      card.style.outlineOffset = '2px';
+      setTimeout(() => { card.style.outline = ''; card.style.outlineOffset = ''; }, 1800);
+    }
+  }, 200);
+}
+
+// Add data-project-id to cards so scrollToProject can find them — patched into render
+const _origRender = render;
+render = function() {
+  _origRender();
+  refreshNotifBadge();
+  // Stamp project IDs onto cards after render
+  document.querySelectorAll('.project-card').forEach(card => {
+    const editBtn = card.querySelector('[onclick^="editProject"]');
+    if (editBtn) {
+      const match = editBtn.getAttribute('onclick').match(/editProject\('([^']+)'\)/);
+      if (match) card.setAttribute('data-project-id', match[1]);
+    }
+  });
+};
+
+// Show a subtle toast banner on page load for critical/overdue items
+function showLoadToast() {
+  const overdue = getNotifications().filter(n => n.type === 'overdue' && !dismissedNotifs.includes(n.id));
+  const today = getNotifications().filter(n => n.type === 'due-today' && !dismissedNotifs.includes(n.id));
+  const total = overdue.length + today.length;
+  if (total === 0) return;
+
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--navy-mid); border: 1px solid rgba(201,146,42,0.3);
+    border-left: 3px solid ${overdue.length > 0 ? '#e07070' : 'var(--gold)'};
+    padding: 12px 20px; display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.45); z-index: 500;
+    font-family: 'DM Sans', sans-serif; font-size: 0.85rem; color: var(--text);
+    transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+    min-width: 280px; max-width: 420px; border-radius: 3px;
+  `;
+  toast.innerHTML = `
+    <span style="font-size:1.1rem">${overdue.length > 0 ? '⚠️' : '🔔'}</span>
+    <span style="flex:1">
+      ${overdue.length > 0 ? `<strong style="color:#e07070">${overdue.length} overdue</strong>` : ''}
+      ${overdue.length > 0 && today.length > 0 ? ' and ' : ''}
+      ${today.length > 0 ? `<strong style="color:var(--gold-light)">${today.length} due today</strong>` : ''}
+    </span>
+    <button onclick="openNotifPanel();this.parentElement.remove()" style="background:rgba(201,146,42,0.12);border:1px solid rgba(201,146,42,0.3);color:var(--gold);padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:0.75rem;cursor:pointer;border-radius:2px;white-space:nowrap;">View</button>
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:0 2px;line-height:1;">✕</button>
+  `;
+  document.body.appendChild(toast);
+  // Animate in
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { toast.style.transform = 'translateX(-50%) translateY(0)'; });
+  });
+  // Auto-dismiss after 7s
+  setTimeout(() => {
+    toast.style.transform = 'translateX(-50%) translateY(80px)';
+    setTimeout(() => toast.remove(), 400);
+  }, 7000);
+}
+
+updateIdeasCount();
+render();
+setTimeout(showLoadToast, 800);
+</script>
+
+</body>
+</html>
