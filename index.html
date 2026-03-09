@@ -1777,6 +1777,11 @@ function renderGrid() {
       <div class="card-meta">
         <span class="priority-badge ${priority}">${PRIORITY_LABEL[priority]}</span>
         <span class="status-badge ${p.status}">${STATUS_LABEL[p.status]}</span>
+        <select class="status-toggle" onchange="updateStatus('${p.id}', this.value); event.stopPropagation();">
+          <option value="todo" ${p.status === 'todo' ? 'selected' : ''}>To Do</option>
+          <option value="progress" ${p.status === 'progress' ? 'selected' : ''}>In Progress</option>
+          <option value="done" ${p.status === 'done' ? 'selected' : ''}>Done</option>
+        </select>
       </div>
       <div class="card-desc">${p.desc || ''}</div>
       ${progressHTML}
