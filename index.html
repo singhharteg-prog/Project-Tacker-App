@@ -324,6 +324,21 @@ gap: 8px;
 flex-wrap: wrap;
 }
 
+.status-toggle {
+background: var(--navy);
+border: 1px solid var(--border);
+color: var(--text);
+font-family: 'DM Sans', sans-serif;
+font-size: 0.75rem;
+padding: 4px 8px;
+border-radius: 2px;
+cursor: pointer;
+outline: none;
+transition: border-color 0.2s, background 0.2s;
+}
+.status-toggle:focus { border-color: var(--gold); }
+.status-toggle option { background: var(--navy-mid); color: var(--text); }
+
 /* Form row - two columns */
 .form-row {
 display: grid;
@@ -1991,6 +2006,14 @@ function confirmDelete() {
   save();
   render();
   closeConfirm();
+}
+
+function updateStatus(id, status) {
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+  p.status = status;
+  save();
+  render();
 }
 
 document.addEventListener('keydown', e => {
