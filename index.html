@@ -154,11 +154,41 @@ flex-shrink: 0;
 .stat-label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
 .stat-count { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 600; color: var(--gold-light); line-height: 1.1; }
 
-/* Project grid */
+/* Project grid (used for inner lists) */
 .projects-grid {
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-gap: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+/* Outer container that wraps status groups */
+#grid {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+}
+
+/* each status group becomes a vertical column */
+.status-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* override inner projects grid to stack cards vertically
+   so groups behave like a simple list */
+.status-group .projects-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.status-group-title {
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 12px 0;
 }
 
 .project-card {
@@ -1458,7 +1488,7 @@ header, main { padding: 24px 20px; }
 
 <main>
   <div class="stats" id="stats"></div>
-  <div class="projects-grid" id="grid"></div>
+  <div id="grid"></div>
 </main>
 
 <!-- Ideas Section — Mind Map -->
@@ -1764,48 +1794,71 @@ function renderStats() {
 function renderGrid() {
   const grid = document.getElementById('grid');
   const filtered = activeTab === 'All' ? projects : projects.filter(p => p.cat === activeTab);
+
   if (filtered.length === 0) {
     grid.innerHTML = `<div class="empty"><div class="empty-icon">✦</div><h3>No projects yet</h3><p>Click "New Project" to get started.</p></div>`;
     return;
   }
-  grid.innerHTML = filtered.map((p, i) => {
-    const due = p.due ? formatDueDate(p.due) : null;
-    const priority = p.priority || 'medium';
-    const subtasks = p.subtasks || [];
-    const total = subtasks.length;
-    const done = subtasks.filter(s => s.done).length;
-    const pct = total ? Math.round((done / total) * 100) : 0;
-    const progressHTML = total > 0 ? `
-      <div class="subtask-progress">
-        <div class="subtask-progress-label"><span>Subtasks</span><span>${done}/${total}</span></div>
-        <div class="progress-track"><div class="progress-fill ${pct === 100 ? 'complete' : ''}" style="width:${pct}%"></div></div>
-      </div>` : '';
-    return `
-    <div class="project-card" data-cat="${p.cat}" style="animation-delay:${i*0.04}s;--card-cat-color:${getCatColor(p.cat)}" onclick="openDetail('${p.id}')">
-      <div class="card-header">
-        <div class="card-title">${p.name}</div>
-        <div class="card-actions">
-          <button class="icon-btn" onclick="event.stopPropagation();editProject('${p.id}')" title="Edit">✎</button>
-          <button class="icon-btn delete" onclick="event.stopPropagation();deleteProject('${p.id}')" title="Delete">✕</button>
+
+  // group by status and render each section separately
+  const statuses = ['todo', 'progress', 'done'];
+  let idx = 0; // used for animation delay
+  let html = '';
+
+  statuses.forEach(status => {
+    const items = filtered.filter(p => p.status === status);
+    if (items.length === 0) return; // skip empty groups
+
+    html += `<div class="status-group">
+      <div class="status-group-title">${STATUS_LABEL[status]}</div>
+      <div class="projects-grid">`;
+
+    items.forEach(p => {
+      const due = p.due ? formatDueDate(p.due) : null;
+      const priority = p.priority || 'medium';
+      const subtasks = p.subtasks || [];
+      const total = subtasks.length;
+      const done = subtasks.filter(s => s.done).length;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      const progressHTML = total > 0 ? `
+        <div class="subtask-progress">
+          <div class="subtask-progress-label"><span>Subtasks</span><span>${done}/${total}</span></div>
+          <div class="progress-track"><div class="progress-fill ${pct === 100 ? 'complete' : ''}" style="width:${pct}%"></div></div>
+        </div>` : '';
+
+      html += `
+      <div class="project-card" data-cat="${p.cat}" style="animation-delay:${idx*0.04}s;--card-cat-color:${getCatColor(p.cat)}" onclick="openDetail('${p.id}')">
+        <div class="card-header">
+          <div class="card-title">${p.name}</div>
+          <div class="card-actions">
+            <button class="icon-btn" onclick="event.stopPropagation();editProject('${p.id}')" title="Edit">✎</button>
+            <button class="icon-btn delete" onclick="event.stopPropagation();deleteProject('${p.id}')" title="Delete">✕</button>
+          </div>
         </div>
-      </div>
-      <div class="card-meta">
-        <span class="priority-badge ${priority}">${PRIORITY_LABEL[priority]}</span>
-        <span class="status-badge ${p.status}">${STATUS_LABEL[p.status]}</span>
-        <select class="status-toggle" onchange="updateStatus('${p.id}', this.value); event.stopPropagation();">
-          <option value="todo" ${p.status === 'todo' ? 'selected' : ''}>To Do</option>
-          <option value="progress" ${p.status === 'progress' ? 'selected' : ''}>In Progress</option>
-          <option value="done" ${p.status === 'done' ? 'selected' : ''}>Done</option>
-        </select>
-      </div>
-      <div class="card-desc">${p.desc || ''}</div>
-      ${progressHTML}
-      <div class="card-footer" style="margin-top:${total>0?'12px':'0'}">
-        <span class="cat-tag ${getCatClass(p.cat)}">${p.cat}</span>
-        ${due ? `<span class="due-date ${due.cls}">${calIcon}${due.label}</span>` : ''}
-      </div>
+        <div class="card-meta">
+          <span class="priority-badge ${priority}">${PRIORITY_LABEL[priority]}</span>
+          <span class="status-badge ${p.status}">${STATUS_LABEL[p.status]}</span>
+          <select class="status-toggle" onchange="updateStatus('${p.id}', this.value); event.stopPropagation();">
+            <option value="todo" ${p.status === 'todo' ? 'selected' : ''}>To Do</option>
+            <option value="progress" ${p.status === 'progress' ? 'selected' : ''}>In Progress</option>
+            <option value="done" ${p.status === 'done' ? 'selected' : ''}>Done</option>
+          </select>
+        </div>
+        <div class="card-desc">${p.desc || ''}</div>
+        ${progressHTML}
+        <div class="card-footer" style="margin-top:${total>0?'12px':'0'}">
+          <span class="cat-tag ${getCatClass(p.cat)}">${p.cat}</span>
+          ${due ? `<span class="due-date ${due.cls}">${calIcon}${due.label}</span>` : ''}
+        </div>
+      </div>`;
+      idx++;
+    });
+
+    html += `</div>
     </div>`;
-  }).join('');
+  });
+
+  grid.innerHTML = html;
 }
 
 function setTab(cat) { activeTab = cat; render(); }
