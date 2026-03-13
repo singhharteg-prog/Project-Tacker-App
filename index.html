@@ -207,19 +207,14 @@ from { opacity: 0; transform: translateY(12px); }
 to { opacity: 1; transform: translateY(0); }
 }
 
-.project-card::before {
-content: '';
-position: absolute;
-left: 0; top: 0; bottom: 0;
-width: 3px;
+@keyframes doneGlow {
+  0% { box-shadow: 0 0 0 rgba(90,171,109,0); }
+  40% { box-shadow: 0 0 0 12px rgba(90,171,109,0.2); }
+  100% { box-shadow: 0 0 0 rgba(90,171,109,0); }
 }
 
-.project-card::before { background: var(--card-cat-color, var(--cat1)); }
-
-.project-card:hover {
-border-color: rgba(201,146,42,0.45);
-background: var(--navy-light);
-transform: translateY(-2px);
+.project-card.done-animate {
+  animation: doneGlow 0.6s ease both;
 }
 
 .card-header {
@@ -1837,7 +1832,7 @@ function renderGrid() {
         </div>
         <div class="card-meta">
           <span class="priority-badge ${priority}">${PRIORITY_LABEL[priority]}</span>
-          <span class="status-badge ${p.status}">${STATUS_LABEL[p.status]}</span>
+          ${p.status !== 'done' ? `<span class="status-badge ${p.status}">${STATUS_LABEL[p.status]}</span>` : ''}
           <select class="status-toggle" onchange="updateStatus('${p.id}', this.value); event.stopPropagation();">
             <option value="todo" ${p.status === 'todo' ? 'selected' : ''}>To Do</option>
             <option value="progress" ${p.status === 'progress' ? 'selected' : ''}>In Progress</option>
@@ -1888,7 +1883,7 @@ function renderDetail(p) {
   const priority = p.priority || 'medium';
   document.getElementById('d-badges').innerHTML = `
     <span class="priority-badge ${priority}">${PRIORITY_LABEL[priority]}</span>
-    <span class="status-badge ${p.status}">${STATUS_LABEL[p.status]}</span>
+    ${p.status !== 'done' ? `<span class="status-badge ${p.status}">${STATUS_LABEL[p.status]}</span>` : ''}
     <span class="cat-tag ${getCatClass(p.cat)}">${p.cat}</span>
     ${due ? `<span class="due-date ${due.cls}" style="margin-top:0">${calIcon}${due.label}</span>` : ''}
   `;
@@ -2067,6 +2062,16 @@ function updateStatus(id, status) {
   p.status = status;
   save();
   render();
+
+  // When a project is marked done, briefly animate the card.
+  if (status === 'done') {
+    setTimeout(() => {
+      const card = document.querySelector(`[data-project-id="${id}"]`);
+      if (!card) return;
+      card.classList.add('done-animate');
+      setTimeout(() => card.classList.remove('done-animate'), 700);
+    }, 40);
+  }
 }
 
 document.addEventListener('keydown', e => {
